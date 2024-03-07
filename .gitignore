@@ -1,0 +1,120 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+*.venv/
+.idea/
+
+# Local development configuration
+/.env
+
+# Testing and coverage reports
+htmlcov/
+.coverage
+.tox/
+.noseids
+nosetests.xml
+
+# Translations
+*.mo
+*.pot
+
+# Database files
+*.db
+*.sqlite3
+*.sqlitedb
+
+# Log files
+*.log
+
+# Dependency directories
+env/
+lib/
+libs/
+node_modules/
+
+# Distribution / packaging
+dist/
+build/
+eggs/
+*.egg-info/
+*.egg
+*.exe
+*.msi
+*.tar.gz
+*.tgz
+*.zip
+*.dmg
+*.whl
+*.pyinstaller/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Editors
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+*.komodoproject
+.komodotools/
+.kate-swp
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# pyenv
+.python-version
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+.env.bak
+.venv.bak
+
+# Mac OS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Windows thumbnail cache files
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+
+# Windows Installer files
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# Webpack
+node_modules/
+dist/
+.cache/
+
+# .env file
+.env
+
+# Python-OpenAI model cache
+.models/
+
+PPM-100/
+flagged/
