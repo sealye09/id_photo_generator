@@ -6,10 +6,10 @@ import numpy as np
 from fastapi import Body, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from beauty import Beauty
-from enums import BackgroundColor, MattingModel, PhotoExtension, PhotoSize
-from matting import inference
-from photo_cropper import PhotoCropper
+from src.beauty import Beauty
+from src.enums import BackgroundColor, MattingModel, PhotoExtension, PhotoSize
+from src.matting import inference
+from src.photo_cropper import PhotoCropper
 
 
 def ID_photo_generator(

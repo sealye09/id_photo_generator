@@ -1,10 +1,10 @@
 import cv2 as cv
 import gradio as gr
 
-from beauty import Beauty
-from enums import BackgroundColor, MattingModel, PhotoSize
-from matting import inference
-from photo_cropper import PhotoCropper
+from src.beauty import Beauty
+from src.enums import BackgroundColor, MattingModel, PhotoSize
+from src.matting import inference
+from src.photo_cropper import PhotoCropper
 
 
 def predict(
@@ -61,17 +61,17 @@ def predict(
 
 
 if __name__ == "__main__":
-
     interface = gr.Interface(
         fn=predict,
         inputs=gr.Image(label="Image", height=512),
         outputs=[
-            gr.Image(type="pil", label="Matte"),
-            gr.Image(type="pil", label="Compose Image"),
-            gr.Image(type="pil", label="Face Area"),
-            gr.Image(type="pil", label="Beauty Image"),
+            gr.Image(type="pil", label="Matte", height=512),
+            gr.Image(type="pil", label="Compose Image", height="full"),
+            gr.Image(type="pil", label="Face Area", height="full"),
+            gr.Image(type="pil", label="Beauty Image", height="full"),
         ],
         title="person-modnet",
         theme=gr.themes.Base(),
+        allow_flagging="never",
     )
     interface.launch(share=False)

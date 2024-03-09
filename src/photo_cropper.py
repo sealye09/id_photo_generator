@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from enums import FaceDetectorModel
+from src.enums import FaceDetectorModel
 
 
 class PhotoCropper:
