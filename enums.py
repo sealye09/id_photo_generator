@@ -15,6 +15,11 @@ class PhotoSize(Enum):
     LARGE = (413, 626)
 
 
+class PhotoExtension(Enum):
+    PNG = "png"
+    JPG = "jpg"
+
+
 class MattingModel(Enum):
     MODNET = "public/models/matting/modnet_photographic_portrait_matting.onnx"
     MOBILENETV2 = "public/models/matting/mobilenetv2_human_seg.ckpt"
