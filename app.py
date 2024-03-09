@@ -70,7 +70,7 @@ if __name__ == "__main__":
             gr.Image(type="pil", label="Face Area", height="full"),
             gr.Image(type="pil", label="Beauty Image", height="full"),
         ],
-        title="person-modnet",
+        title="ID Photo Generator",
         theme=gr.themes.Base(),
         allow_flagging="never",
     )
