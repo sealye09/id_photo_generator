@@ -4,6 +4,7 @@ from typing import Annotated
 import cv2 as cv
 import numpy as np
 from fastapi import Body, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from beauty import Beauty
 from enums import BackgroundColor, MattingModel, PhotoExtension, PhotoSize
@@ -103,6 +104,15 @@ def base64_2_numpy(base64_str: str):
 
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/api/hello")
