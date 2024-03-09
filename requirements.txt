@@ -1,0 +1,6 @@
+fastapi==0.110.0
+gradio==4.21.0
+numpy==1.26.4
+onnxruntime==1.17.1
+opencv_python==4.9.0.80
+uvicorn==0.27.1
