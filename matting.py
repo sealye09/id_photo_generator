@@ -1,6 +1,7 @@
+import math
+
 import cv2
 import numpy as np
-import math
 import onnxruntime
 
 
@@ -124,9 +125,3 @@ def inference(image, model_path, ref_size=512, background_color=(0, 0, 255)):
     compose_im_with_bg = image_fusion(image, matte, background_color)
 
     return matte, compose_im, compose_im_with_bg
-
-
-if __name__ == "__main__":
-    print("test start")
-
-    print("test end")

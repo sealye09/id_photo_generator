@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+
+from enums import FaceDetectorModel
 
 
 class PhotoCropper:
@@ -17,8 +18,8 @@ class PhotoCropper:
 
     def __init__(self, input_image, matte_image):
         self.face_detector = cv2.dnn.readNetFromCaffe(
-            "public/models/face_detector/deploy.prototxt",
-            "public/models/face_detector/res10_300x300_ssd_iter_140000_fp16.caffemodel",
+            FaceDetectorModel.CAFFE_CONFIG.value,
+            FaceDetectorModel.CAFFE_BIN.value,
         )
         self.face_on_photo = 0.7
         self.photo_ratio = 5 / 7.0
@@ -72,6 +73,7 @@ class PhotoCropper:
         photo = self.input_image[
             self.photo_top : self.photo_bottom, self.photo_left : self.photo_right
         ]
+
         return photo
 
     def get_photo_area(self):
@@ -238,6 +240,42 @@ class PhotoCropper:
         )
 
         return photo
+
+
+def edge_blur(image, kernel_size, low_threshold, high_threshold):
+    """
+    对图像边缘进行模糊处理
+    :param image: 输入的图像
+    :param kernel_size: 高斯模糊的核大小，应为奇数
+    :param low_threshold: Canny边缘检测的低阈值
+    :param high_threshold: Canny边缘检测的高阈值
+    :return: 处理后的图像
+    """
+    original_image = image.copy()
+
+    # Perform Canny edge detection
+    edges = cv2.Canny(image, low_threshold, high_threshold)
+
+    # Create an empty kernel
+    kernel = np.ones((3, 3), np.uint8)
+
+    # Dilate the edges to create a mask
+    dilated_edges = cv2.dilate(edges, kernel)
+
+    # Create a mask with Gaussian blur
+    mask = cv2.GaussianBlur(dilated_edges, (kernel_size, kernel_size), 0)
+
+    # Convert the mask to float32
+    mask = mask.astype(np.float32) / 255
+
+    # Blend the image and the mask
+    mask_3d = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
+    blurred = cv2.multiply(original_image.astype(np.float32), mask_3d)
+
+    # Convert the result back to uint8
+    blurred = blurred.astype(np.uint8)
+
+    return blurred
 
 
 # if __name__ == "__main__":
