@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 import onnxruntime
 
+from src.enums import BackgroundColor, MattingModel
+
 
 # Get x_scale_factor & y_scale_factor to resize image
 def get_scale_factor(im_h, im_w, ref_size):
@@ -60,54 +62,6 @@ def image_postprocess(matte, im_w, im_h):
     return matte
 
 
-def compose_image(image, matte):
-    im_h, im_w, im_c = image.shape
-    matte = cv2.resize(matte, dsize=(im_w, im_h), interpolation=cv2.INTER_AREA)
-    b, g, r = cv2.split(image)
-    result = cv2.merge([r, g, b, matte])
-
-    return result
-
-
-def image_fusion(image: np.ndarray, alpha: np.ndarray, bg_img=(255, 0, 0)):
-    """
-    图像融合：合成图 = 前景*alpha+背景*(1-alpha)
-    :param image: RGB图像(uint8)
-    :param alpha: 单通道的alpha图像(uint8)
-    :param bg_img: 背景图像,可以是任意的分辨率图像，也可以指定指定纯色的背景
-    :return: 返回与背景合成的图像
-    """
-    if isinstance(bg_img, tuple) or isinstance(bg_img, list):
-        bg_img = np.ones_like(image, dtype=np.uint8) * np.array(bg_img, dtype=np.uint8)
-
-    if len(alpha.shape) == 2:
-        alpha = alpha[:, :, np.newaxis]
-    if alpha.dtype == np.uint8:
-        alpha = np.asarray(alpha / 255.0, dtype=np.float32)
-
-    sh, sw, d = image.shape
-    bh, bw, d = bg_img.shape
-    ratio = [sw / bw, sh / bh]
-    ratio = max(ratio)
-    if ratio > 1:
-        bg_img = cv2.resize(
-            bg_img,
-            dsize=(math.ceil(bw * ratio), math.ceil(bh * ratio)),
-            interpolation=cv2.INTER_AREA,
-        )
-
-    # Convert arrays to the same data type
-    image = image.astype(np.float32)
-    alpha = alpha.astype(np.float32)
-    bg_img = bg_img.astype(np.float32)
-
-    # Perform element-wise multiplication
-    result = image * alpha + bg_img * (np.array([1], dtype=alpha.dtype) - alpha)
-    result = result.astype(np.uint8)
-
-    return result
-
-
 def onnx_inference(model_path, im):
     session = onnxruntime.InferenceSession(model_path, None)
     input_name = session.get_inputs()[0].name
@@ -116,12 +70,72 @@ def onnx_inference(model_path, im):
     return result
 
 
-def inference(image, model_path, ref_size=512, background_color=(0, 0, 255)):
-    im_pre, im_w, im_h = image_preprocess(image, ref_size)
-    result = onnx_inference(model_path, im_pre)
-    matte = image_postprocess(result[0], im_w, im_h)
-    compose_im = compose_image(image, matte)
+class Matte:
+    def __init__(
+        self,
+        model_path=MattingModel.MODNET.value,
+        ref_size=512,
+        background_color=BackgroundColor.BLUE.value,
+    ):
+        self.model_path = model_path
+        self.ref_size = ref_size
+        self.background_color = background_color
 
-    compose_im_with_bg = image_fusion(image, matte, background_color)
+    def matting(self, image: np.ndarray):
+        im_pre, im_w, im_h = image_preprocess(image, self.ref_size)
+        result = onnx_inference(self.model_path, im_pre)
+        background = image_postprocess(result[0], im_w, im_h)
+        return background
 
-    return matte, compose_im, compose_im_with_bg
+    def compose(self, foreground, background):
+        im_h, im_w, im_c = foreground.shape
+        background = cv2.resize(
+            background, dsize=(im_w, im_h), interpolation=cv2.INTER_AREA
+        )
+        b, g, r = cv2.split(foreground)
+        result = cv2.merge([r, g, b, background])
+
+        return result
+
+    def compose_with_background(self, foreground: np.ndarray, background: np.ndarray):
+        """
+        图像融合：合成图 = 前景*alpha+背景*(1-alpha)
+        :param foreground: RGB图像(uint8)
+        :param background: 单通道的alpha图像(uint8)
+        :return: 返回与背景合成的图像
+        """
+        if isinstance(self.background_color, tuple) or isinstance(
+            self.background_color, list
+        ):
+            self.background_color = np.ones_like(foreground, dtype=np.uint8) * np.array(
+                self.background_color, dtype=np.uint8
+            )
+
+        if len(background.shape) == 2:
+            background = background[:, :, np.newaxis]
+        if background.dtype == np.uint8:
+            background = np.asarray(background / 255.0, dtype=np.float32)
+
+        sh, sw, d = foreground.shape
+        bh, bw, d = self.background_color.shape
+        ratio = [sw / bw, sh / bh]
+        ratio = max(ratio)
+        if ratio > 1:
+            self.background_color = cv2.resize(
+                self.background_color,
+                dsize=(math.ceil(bw * ratio), math.ceil(bh * ratio)),
+                interpolation=cv2.INTER_AREA,
+            )
+
+        # Convert arrays to the same data type
+        foreground = foreground.astype(np.float32)
+        background = background.astype(np.float32)
+        self.background_color = self.background_color.astype(np.float32)
+
+        # Perform element-wise multiplication
+        result = foreground * background + self.background_color * (
+            np.array([1], dtype=background.dtype) - background
+        )
+        result = result.astype(np.uint8)
+
+        return result

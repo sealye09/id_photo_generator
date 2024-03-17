@@ -2,8 +2,8 @@ import cv2 as cv
 import gradio as gr
 
 from src.beauty import Beauty
-from src.enums import BackgroundColor, MattingModel, PhotoSize
-from src.matting import inference
+from src.enums import BackgroundColor, PhotoSize
+from src.matting import Matte
 from src.photo_cropper import PhotoCropper
 
 
@@ -29,11 +29,9 @@ def predict(
     start_time = cv.getTickCount()
 
     # 人像分割结果和合成图像
-    (matte, compose_im, compose_im_with_bg) = inference(
-        image=image,
-        model_path=MattingModel.MODNET.value,
-        background_color=background_color,
-    )
+    matter = Matte(background_color=background_color)
+    matte = matter.matting(image)
+    compose_im_with_bg = matter.compose_with_background(image, matte)
 
     # 获取人脸区域，裁剪证件照
     cropper = PhotoCropper(compose_im_with_bg, matte)

@@ -7,8 +7,8 @@ from fastapi import Body, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.beauty import Beauty
-from src.enums import BackgroundColor, MattingModel, PhotoExtension, PhotoSize
-from src.matting import inference
+from src.enums import BackgroundColor, PhotoExtension, PhotoSize
+from src.matting import Matte
 from src.photo_cropper import PhotoCropper
 
 
@@ -39,11 +39,9 @@ def ID_photo_generator(
         return None
 
     # 人像分割结果和合成图像
-    (matte, compose_im, compose_im_with_bg) = inference(
-        image=image,
-        model_path=MattingModel.MODNET.value,
-        background_color=background_color,
-    )
+    matter = Matte(background_color=background_color)
+    matte = matter.matting(image)
+    compose_im_with_bg = matter.compose_with_background(image, matte)
 
     # 获取人脸区域，裁剪证件照
     cropper = PhotoCropper(compose_im_with_bg, matte)
@@ -124,10 +122,20 @@ def read_root():
 @app.post("/api/id-photo")
 async def id_photo_inference(
     image: Annotated[str, Body(embed=True)],
-    background_color: Annotated[tuple, Body(embed=True)] = BackgroundColor.BLUE.value,
-    size: Annotated[tuple, Body(embed=True)] = PhotoSize.SMALL.value,
+    background_color: Annotated[
+        tuple | str, Body(embed=True)
+    ] = BackgroundColor.BLUE.value,
+    size: Annotated[tuple | str, Body(embed=True)] = PhotoSize.SMALL.value,
     extension: Annotated[str, Body(embed=True)] = PhotoExtension.PNG.value,
 ):
+    # parse input
+    # blue white red transform to enum BackgroundColor
+    # small large transform to enum PhotoSize
+    if isinstance(background_color, str):
+        background_color = BackgroundColor[background_color.upper()].value
+    if isinstance(size, str):
+        size = PhotoSize[size.upper()].value
+
     # check size background_color extension by value
     if not PhotoSize(size):
         result_message = {"code": 400, "data": None, "message": "Invalid photo size"}

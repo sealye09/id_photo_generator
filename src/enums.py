@@ -22,7 +22,6 @@ class PhotoExtension(Enum):
 
 class MattingModel(Enum):
     MODNET = "public/models/matting/modnet_photographic_portrait_matting.onnx"
-    MOBILENETV2 = "public/models/matting/mobilenetv2_human_seg.ckpt"
 
 
 class FaceDetectorModel(Enum):

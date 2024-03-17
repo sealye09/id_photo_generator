@@ -18,9 +18,6 @@ class Beauty:
         :param gamma: 幂函数增强的参数
         :return: 处理后的图像
         """
-        if self.image is None:
-            return ValueError("Image is None")
-
         # Convert the image to YCrCb color space
         image_ycrcb = cv2.cvtColor(self.image, cv2.COLOR_BGR2YCrCb)
 
