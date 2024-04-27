@@ -37,6 +37,8 @@ def predict(
     cropper = PhotoCropper(compose_im_with_bg, matte)
     cropped_img = cropper.crop()
 
+    lined_img = cropper.draw()
+
     # check if the cropped image is None
     if cropped_img is None:
         print("Cropped went wrong. Please try again.")
@@ -44,10 +46,10 @@ def predict(
 
     # 美颜处理
     beauty = Beauty(cropped_img)
-    beauty_image = beauty.beautify_skin(5, 12, 12, 1.2)
+    beauty_image = beauty.beautify_skin(5, 8, 8, 0.8)
 
     # 修改证件照尺寸。默认为1寸
-    cropped_img = cv.resize(cropped_img, photo_size, interpolation=cv.INTER_AREA)
+    beauty_image = cv.resize(beauty_image, photo_size, interpolation=cv.INTER_AREA)
 
     # 格式 png jpg
 
@@ -65,7 +67,7 @@ if __name__ == "__main__":
         outputs=[
             gr.Image(type="pil", label="Matte", height=512),
             gr.Image(type="pil", label="Compose Image", height="full"),
-            gr.Image(type="pil", label="Face Area", height="full"),
+            gr.Image(type="pil", label="Cropped Image", height="full"),
             gr.Image(type="pil", label="Beauty Image", height="full"),
         ],
         title="ID Photo Generator",

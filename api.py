@@ -1,4 +1,5 @@
 import base64
+import mimetypes
 from typing import Annotated
 
 import cv2 as cv
@@ -26,16 +27,6 @@ def ID_photo_generator(
     """
     if image is None:
         print("Image is None")
-        return None
-
-    # check background color by name
-    if not BackgroundColor(background_color):
-        print("Invalid background color")
-        return None
-
-    # check photo size by name
-    if not PhotoSize(photo_size):
-        print("Invalid photo size")
         return None
 
     # 人像分割结果和合成图像
@@ -70,35 +61,28 @@ def ID_photo_generator(
     return matte, compose_im_with_bg, cropped_img, beauty_image
 
 
-def numpy_2_base64(img: np.ndarray):
-    """Convert numpy array to base64 string
+def parse_base64(base64_str: str):
+    if base64_str.startswith("data:image"):
+        ext = "png"
+        base64_str, data = base64_str.split(",")  # separate header and data
+        mime_type = base64_str.split(";")[0].split(":")
+        if len(mime_type) > 1:
+            mime_type = mime_type[1]
+            extension = mimetypes.guess_extension(mime_type)
+            if extension is not None and extension.startswith("."):
+                ext = extension[1:]
 
-    Args:
-        img (np.ndarray): input image
+        img_data = base64.b64decode(data)
+        nparr = np.frombuffer(img_data, np.uint8)
+        img = cv.imdecode(nparr, cv.IMREAD_COLOR)
 
-    Returns:
-        str: base64 string
-    """
-    retval, buffer = cv.imencode(".png", img)
-    base64_image = base64.b64encode(buffer.tobytes()).decode("utf-8")
-
-    return base64_image
-
-
-def base64_2_numpy(base64_str: str):
-    """Convert base64 string to numpy array
-
-    Args:
-        base64_str (str): base64 string
-
-    Returns:
-        np.ndarray: output image
-    """
-    img_data = base64.b64decode(base64_str)
-    nparr = np.frombuffer(img_data, np.uint8)
-    img = cv.imdecode(nparr, cv.IMREAD_COLOR)
-
-    return img
+        return img, ext
+    else:
+        data = base64_str.split(",")[1]
+        img_data = base64.b64decode(data)
+        nparr = np.frombuffer(img_data, np.uint8)
+        img = cv.imdecode(nparr, cv.IMREAD_COLOR)
+        return img, "png"
 
 
 app = FastAPI()
@@ -126,36 +110,26 @@ async def id_photo_inference(
         tuple | str, Body(embed=True)
     ] = BackgroundColor.BLUE.value,
     size: Annotated[tuple | str, Body(embed=True)] = PhotoSize.SMALL.value,
-    extension: Annotated[str, Body(embed=True)] = PhotoExtension.PNG.value,
 ):
     # parse input
     # blue white red transform to enum BackgroundColor
     # small large transform to enum PhotoSize
     if isinstance(background_color, str):
         background_color = BackgroundColor[background_color.upper()].value
+        # to bgr
+        background_color = (
+            background_color[2],
+            background_color[1],
+            background_color[0],
+        )
     if isinstance(size, str):
         size = PhotoSize[size.upper()].value
 
-    # check size background_color extension by value
-    if not PhotoSize(size):
-        result_message = {"code": 400, "data": None, "message": "Invalid photo size"}
-        return result_message
-    if not BackgroundColor(background_color):
-        result_message = {
-            "code": 400,
-            "data": None,
-            "message": "Invalid background color",
-        }
-        return result_message
-    if not PhotoExtension(extension):
-        result_message = {
-            "code": 400,
-            "data": None,
-            "message": "Invalid photo extension",
-        }
-        return result_message
+    input_image, extension = parse_base64(image)
 
-    input_image = base64_2_numpy(image)
+    if input_image is None:
+        result_message = {"code": 500, "data": None, "message": "failed"}
+        return result_message
 
     res = ID_photo_generator(input_image, background_color, size, extension)
 
@@ -169,9 +143,18 @@ async def id_photo_inference(
         return result_message
 
     # Convert to base64
-    res_image = numpy_2_base64(np.frombuffer(beauty_image, np.uint8))
+    res_image = base64.b64encode(beauty_image).decode("utf-8")
+    res_image = f"data:image/{extension};base64,{res_image}"
 
-    result_message = {"code": 200, "data": res_image, "message": "success"}
+    result_message = {
+        "code": 200,
+        "data": {
+            "image": res_image,
+            "height": size[1],
+            "width": size[0],
+        },
+        "message": "success",
+    }
     return result_message
 
 

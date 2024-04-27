@@ -239,7 +239,7 @@ class PhotoCropper:
             2,
         )
 
-        return photo
+        return cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)
 
 
 def edge_blur(image, kernel_size, low_threshold, high_threshold):
