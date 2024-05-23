@@ -38,6 +38,11 @@ def predict(
     cropped_img = cropper.crop()
 
     lined_img = cropper.draw()
+    # bgr to rgb
+    lined_img = cv.cvtColor(lined_img, cv.COLOR_BGR2RGB)
+
+    # faces detections
+    # faces = cropper.copy_image
 
     # check if the cropped image is None
     if cropped_img is None:
@@ -47,9 +52,10 @@ def predict(
     # 美颜处理
     beauty = Beauty(cropped_img)
     beauty_image = beauty.beautify_skin(5, 8, 8, 0.8)
+    beauty_image2 = beauty.sharpen()
 
     # 修改证件照尺寸。默认为1寸
-    beauty_image = cv.resize(beauty_image, photo_size, interpolation=cv.INTER_AREA)
+    # beauty_image = cv.resize(beauty_image, photo_size, interpolation=cv.INTER_AREA)
 
     # 格式 png jpg
 
@@ -57,7 +63,14 @@ def predict(
     time = (cv.getTickCount() - start_time) / cv.getTickFrequency()
     print("time: %.2f s" % time, flush=True)
 
-    return matte, compose_im_with_bg, cropped_img, beauty_image
+    return (
+        matte,
+        compose_im_with_bg,
+        cropped_img,
+        beauty_image,
+        beauty_image2,
+        lined_img,
+    )
 
 
 if __name__ == "__main__":
@@ -65,10 +78,12 @@ if __name__ == "__main__":
         fn=predict,
         inputs=gr.Image(label="Image", height=512),
         outputs=[
-            gr.Image(type="pil", label="Matte", height=512),
-            gr.Image(type="pil", label="Compose Image", height="full"),
-            gr.Image(type="pil", label="Cropped Image", height="full"),
-            gr.Image(type="pil", label="Beauty Image", height="full"),
+            gr.Image(type="pil", label="matte", height=512),
+            gr.Image(type="pil", label="compose_im_with_bg", height="full"),
+            gr.Image(type="pil", label="cropped_img", height="full"),
+            gr.Image(type="pil", label="beauty_image", height="full"),
+            gr.Image(type="pil", label="beauty_image2", height="full"),
+            gr.Image(type="pil", label="lined_img", height="full"),
         ],
         title="ID Photo Generator",
         theme=gr.themes.Base(),

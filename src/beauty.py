@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from PIL import Image, ImageFilter
 
 
 class Beauty:
@@ -40,4 +41,21 @@ class Beauty:
         # Convert the image back to BGR color space
         beautified_image = cv2.cvtColor(image_ycrcb, cv2.COLOR_YCrCb2BGR)
 
+        self.beautified_image = beautified_image
+
         return beautified_image
+
+    def sharpen(self):
+        """
+        Apply sharpening to the image using the Pillow library.
+        :return: Sharpened image as a numpy array.
+        """
+        image = self.beautified_image
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(image_rgb)
+
+        sharpened_image_pil = pil_image.filter(ImageFilter.SHARPEN)
+        sharpened_image_rgb = np.array(sharpened_image_pil)
+        sharpened_image_bgr = cv2.cvtColor(sharpened_image_rgb, cv2.COLOR_RGB2BGR)
+
+        return sharpened_image_bgr

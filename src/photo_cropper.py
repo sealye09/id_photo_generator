@@ -1,3 +1,5 @@
+import random
+
 import cv2
 import numpy as np
 
@@ -107,6 +109,30 @@ class PhotoCropper:
 
         self.face_detector.setInput(self.blob)
         detections = self.face_detector.forward()
+
+        # # copy the input image
+        # self.copy_image = self.input_image.copy()
+        # # draw all detections
+        # for i in range(0, detections.shape[2]):
+        #     confidence = detections[0, 0, i, 2]
+        #     if confidence > 0.08:
+        #         box = detections[0, 0, i, 3:7] * np.array(
+        #             [
+        #                 self.input_image.shape[1],
+        #                 self.input_image.shape[0],
+        #                 self.input_image.shape[1],
+        #                 self.input_image.shape[0],
+        #             ]
+        #         )
+        #         random_color = (
+        #             random.randint(0, 255),
+        #             random.randint(0, 255),
+        #             random.randint(0, 255),
+        #         )
+        #         (startX, startY, endX, endY) = box.astype("int")
+        #         cv2.rectangle(
+        #             self.copy_image, (startX, startY), (endX, endY), random_color, 2
+        #         )
 
         i = np.argmax(detections[0, 0, :, 2])
         confidence = detections[0, 0, i, 2]
@@ -235,68 +261,8 @@ class PhotoCropper:
             photo,
             (self.photo_left, self.photo_top),
             (self.photo_right, self.photo_bottom),
-            (0, 255, 0),
+            (255, 0, 0),
             2,
         )
 
         return cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)
-
-
-def edge_blur(image, kernel_size, low_threshold, high_threshold):
-    """
-    对图像边缘进行模糊处理
-    :param image: 输入的图像
-    :param kernel_size: 高斯模糊的核大小，应为奇数
-    :param low_threshold: Canny边缘检测的低阈值
-    :param high_threshold: Canny边缘检测的高阈值
-    :return: 处理后的图像
-    """
-    original_image = image.copy()
-
-    # Perform Canny edge detection
-    edges = cv2.Canny(image, low_threshold, high_threshold)
-
-    # Create an empty kernel
-    kernel = np.ones((3, 3), np.uint8)
-
-    # Dilate the edges to create a mask
-    dilated_edges = cv2.dilate(edges, kernel)
-
-    # Create a mask with Gaussian blur
-    mask = cv2.GaussianBlur(dilated_edges, (kernel_size, kernel_size), 0)
-
-    # Convert the mask to float32
-    mask = mask.astype(np.float32) / 255
-
-    # Blend the image and the mask
-    mask_3d = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
-    blurred = cv2.multiply(original_image.astype(np.float32), mask_3d)
-
-    # Convert the result back to uint8
-    blurred = blurred.astype(np.uint8)
-
-    return blurred
-
-
-# if __name__ == "__main__":
-#     from matting import matting
-
-#     start = cv2.getTickCount()
-#     image = cv2.imread("PPM-100/image/3104502752_cb935c1f0b_o.jpg")
-
-#     (matte, compose_im, compose_im_with_bg) = matting(image)
-
-#     time = (cv2.getTickCount() - start) / cv2.getTickFrequency()
-#     print("time1: %.2f s" % time, flush=True)
-
-#     photo_cropper = PhotoCropper(image, matte)
-#     photo_cropper.crop()
-#     photo = photo_cropper.draw()
-
-#     # 颜色空间转换
-#     photo = cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)
-#     time = (cv2.getTickCount() - start) / cv2.getTickFrequency()
-#     print("time2: %.2f s" % time, flush=True)
-#     plt.imshow(photo)
-#     plt.show()
-#     print("done")
